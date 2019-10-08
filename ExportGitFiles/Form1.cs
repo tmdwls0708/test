@@ -67,8 +67,6 @@ namespace ExportGitFiles
                 GetSavePath();
 
                 notifyIcon1.Visible = true;
-
-                String ss = "1";
             }
             catch (Exception)
             {
