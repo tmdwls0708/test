@@ -48,6 +48,7 @@ namespace ExportGitFiles
 
         private void Form1_Load(object sender, EventArgs e)
         {
+
             try
             {
                 richTextBox1.Font = new Font("굴림", 8, FontStyle.Regular);
