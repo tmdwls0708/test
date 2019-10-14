@@ -40,6 +40,7 @@ namespace ExportGitFiles
             TOP_AND_BOTTOM
         }
 
+
         public Form1()
         {
             InitializeComponent();
