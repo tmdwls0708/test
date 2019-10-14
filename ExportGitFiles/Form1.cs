@@ -44,11 +44,13 @@ namespace ExportGitFiles
         public Form1()
         {
             InitializeComponent();
+
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            string s = "1";
+            string s = "1230";
+            string b = s;
             try
             {
                 richTextBox1.Font = new Font("굴림", 8, FontStyle.Regular);
