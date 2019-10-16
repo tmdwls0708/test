@@ -50,10 +50,6 @@ namespace ExportGitFiles
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            string s = "1";
-            string kkk = "kkk";
-            string s = "1230";
-            string b = s;
             try
             {
                 richTextBox1.Font = new Font("굴림", 8, FontStyle.Regular);
@@ -419,7 +415,8 @@ namespace ExportGitFiles
                                     string filename = dataGridView1.Rows[i].Cells["FileName"].Value.ToString();
                                     int idx = filename.LastIndexOf('.');
                                     string ext = filename.Substring(idx + 1);
-
+                                     
+                                    //클래스 파일 처리 
                                     if (ext.ToLower() == "java" && chkClassSave.Checked)
                                     {
                                         string classSourcePath = Path.Combine(sourceDir, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
@@ -479,6 +476,7 @@ namespace ExportGitFiles
                                         }
 
                                     }
+                                    // 프로퍼티 파일 처리 
                                     else if (ext.ToLower() == "properties" && chkClassSave.Checked)
                                     {
                                         string classSourcePath = Path.Combine(sourceDir, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
