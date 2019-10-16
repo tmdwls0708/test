@@ -11,6 +11,7 @@ using ICSharpCode;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip;
 using static ICSharpCode.SharpZipLib.Zip.Compression.Deflater;
+using System.Text.RegularExpressions;
 
 namespace ExportGitFiles
 {
@@ -67,6 +68,8 @@ namespace ExportGitFiles
                 GetSavePath();
 
                 notifyIcon1.Visible = true;
+
+                this.ActiveControl = txtZipPwd;
             }
             catch (Exception)
             {
@@ -411,29 +414,89 @@ namespace ExportGitFiles
                                     int idx = filename.LastIndexOf('.');
                                     string ext = filename.Substring(idx + 1);
 
-                                    if ((ext.ToLower() == "java" || ext.ToLower() == "properties") && chkClassSave.Checked)
+                                    if (ext.ToLower() == "java" && chkClassSave.Checked)
                                     {
                                         string classSourcePath = Path.Combine(sourceDir, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
                                         string classSavePath = Path.Combine(saveDir, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("htdocs", "web_data").Replace("src", "classes"));
-                                        string className = filename.Substring(0, idx) + (ext.ToLower() == "java" ? ".class" : ".properties");
 
                                         if (!Directory.Exists(classSavePath))
                                             Directory.CreateDirectory(classSavePath);
 
-                                        File.Copy(Path.Combine(classSourcePath, className), Path.Combine(classSavePath, className), true);
+                                        //자바 파일 내용 읽어오기
+                                        string content = File.ReadAllText(sourcePath).Replace(" ", "");
+                                        Regex regex = new Regex(@"class(.+)extends|class(.+){|class(.+)implements");
+                                        Match match = regex.Match(content);
+
+                                        //자바 파일 안에 클래스 명들 뽑아내기 
+                                        MatchCollection matches = Regex.Matches(content, @"class(.+)extends|class(.+){|class(.+)implements");
+                                        foreach (Match mm in matches)
+                                        {
+                                            string classFileName = mm.Value.Replace("class", "").Replace("extends", "").Replace("{", "").Replace("implements", "") + ".class";// (ext.ToLower() == "java" ? ".class" : ".properties");
+
+                                            File.Copy(Path.Combine(classSourcePath, classFileName), Path.Combine(classSavePath, classFileName), true);
+
+                                            classFileCount++;
+
+                                            //트리뷰에서 처리할 DataTable
+                                            dt.Rows.Add(classFileName, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
+
+                                            this.Invoke(new Action(delegate
+                                            {
+                                                Logging(Path.Combine(classSourcePath, classFileName).Replace("/", "\\"), Path.Combine(classSavePath, classFileName).Replace("/", "\\"), true);
+
+                                                //class 파일 저장 시 datagridview에 row 추가
+                                                DataGridViewRow _newRow = (DataGridViewRow)dataGridView1.Rows[0].Clone();
+                                                _newRow.Cells[1].Value = classFileName + " (" + filename + ")";
+                                                _newRow.Cells[2].Value = dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes");
+                                                _newRow.DefaultCellStyle.BackColor = Color.White;
+                                                _newRow.DefaultCellStyle.ForeColor = Color.Blue;
+                                                _newRow.DefaultCellStyle.Font = new Font(this.Font, FontStyle.Bold);
+
+                                                bool isAdd = true;
+                                                foreach (DataGridViewRow row in dataGridView1.Rows)
+                                                {
+                                                    string _fileName = row.Cells["FileName"].Value.ToString();
+                                                    string _filePath = row.Cells["FilePath"].Value.ToString();
+
+                                                    string subPath = _fileName + _filePath;
+                                                    string classPath = classFileName + dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes");
+
+                                                    if (subPath == classPath)
+                                                        isAdd = false;
+                                                }
+
+                                                if (isAdd)
+                                                {
+                                                    dataGridView1.Rows.Add(_newRow);
+                                                }
+                                            }));
+                                        }
+
+                                    }
+                                    else if (ext.ToLower() == "properties" && chkClassSave.Checked)
+                                    {
+                                        string classSourcePath = Path.Combine(sourceDir, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
+                                        string classSavePath = Path.Combine(saveDir, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("htdocs", "web_data").Replace("src", "classes"));
+
+                                        if (!Directory.Exists(classSavePath))
+                                            Directory.CreateDirectory(classSavePath);                                        
+                                        
+                                        string classFileName = filename;
+
+                                        File.Copy(Path.Combine(classSourcePath, classFileName), Path.Combine(classSavePath, classFileName), true);
 
                                         classFileCount++;
 
                                         //트리뷰에서 처리할 DataTable
-                                        dt.Rows.Add(className, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
+                                        dt.Rows.Add(classFileName, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
 
                                         this.Invoke(new Action(delegate
                                         {
-                                            Logging(Path.Combine(classSourcePath, className).Replace("/", "\\"), Path.Combine(classSavePath, className).Replace("/", "\\"), true);
+                                            Logging(Path.Combine(classSourcePath, classFileName).Replace("/", "\\"), Path.Combine(classSavePath, classFileName).Replace("/", "\\"), true);
 
                                             //class 파일 저장 시 datagridview에 row 추가
                                             DataGridViewRow _newRow = (DataGridViewRow)dataGridView1.Rows[0].Clone();
-                                            _newRow.Cells[1].Value = className;
+                                            _newRow.Cells[1].Value = classFileName + " (" + filename + ")";
                                             _newRow.Cells[2].Value = dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes");
                                             _newRow.DefaultCellStyle.BackColor = Color.White;
                                             _newRow.DefaultCellStyle.ForeColor = Color.Blue;
@@ -446,7 +509,7 @@ namespace ExportGitFiles
                                                 string _filePath = row.Cells["FilePath"].Value.ToString();
 
                                                 string subPath = _fileName + _filePath;
-                                                string classPath = className + dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes");
+                                                string classPath = classFileName + dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes");
 
                                                 if (subPath == classPath)
                                                     isAdd = false;
@@ -458,8 +521,60 @@ namespace ExportGitFiles
                                             }
                                         }));
                                     }
+                                    #region 구버전 클래스 저장 
+                                        //if ((ext.ToLower() == "java" || ext.ToLower() == "properties") && chkClassSave.Checked)
+                                        //{
+                                        //    string classSourcePath = Path.Combine(sourceDir, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
+                                        //    string classSavePath = Path.Combine(saveDir, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("htdocs", "web_data").Replace("src", "classes"));
+                                        //    string className = filename.Substring(0, idx) + (ext.ToLower() == "java" ? ".class" : ".properties");
+
+                                        //    if (!Directory.Exists(classSavePath))
+                                        //        Directory.CreateDirectory(classSavePath);
+
+                                        //    File.Copy(Path.Combine(classSourcePath, className), Path.Combine(classSavePath, className), true);
+
+                                        //    classFileCount++;
+
+                                        //    //트리뷰에서 처리할 DataTable
+                                        //    dt.Rows.Add(className, dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes"));
+
+                                        //    this.Invoke(new Action(delegate
+                                        //    {
+                                        //        Logging(Path.Combine(classSourcePath, className).Replace("/", "\\"), Path.Combine(classSavePath, className).Replace("/", "\\"), true);
+
+                                        //        //class 파일 저장 시 datagridview에 row 추가
+                                        //        DataGridViewRow _newRow = (DataGridViewRow)dataGridView1.Rows[0].Clone();
+                                        //        _newRow.Cells[1].Value = className;
+                                        //        _newRow.Cells[2].Value = dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes");
+                                        //        _newRow.DefaultCellStyle.BackColor = Color.White;
+                                        //        _newRow.DefaultCellStyle.ForeColor = Color.Blue;
+                                        //        _newRow.DefaultCellStyle.Font = new Font(this.Font, FontStyle.Bold);
+
+                                        //        bool isAdd = true;
+                                        //        foreach (DataGridViewRow row in dataGridView1.Rows)
+                                        //        {
+                                        //            string _fileName = row.Cells["FileName"].Value.ToString();
+                                        //            string _filePath = row.Cells["FilePath"].Value.ToString();
+
+                                        //            string subPath = _fileName + _filePath;
+                                        //            string classPath = className + dataGridView1.Rows[i].Cells["FilePath"].Value.ToString().Replace("src", "classes");
+
+                                        //            if (subPath == classPath)
+                                        //                isAdd = false;
+                                        //        }
+
+                                        //        if (isAdd)
+                                        //        {
+                                        //            dataGridView1.Rows.Add(_newRow);
+                                        //        }
+                                        //    }));                                                                               
+                                        //}   
+                                        #endregion
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+
+                                }
                             }
                         }
                     }
