@@ -434,7 +434,18 @@ namespace ExportGitFiles
                                         MatchCollection matches = Regex.Matches(content, @"class(.+)extends|class(.+){|class(.+)implements");
                                         foreach (Match mm in matches)
                                         {
-                                            string classFileName = mm.Value.Replace("class", "").Replace("extends", "").Replace("{", "").Replace("implements", "") + ".class";// (ext.ToLower() == "java" ? ".class" : ".properties");
+                                            string regexText = mm.Value.ToLower(); 
+
+                                            if (regexText.Contains("class"))
+                                                regexText = regexText.Substring(5); //  "class" 문자 제거 
+                                            if (regexText.Contains("implements"))
+                                                regexText = regexText.Substring(0, regexText.IndexOf("implements")); //   "implements" 문자 제거 
+                                            if (regexText.Contains("extends"))
+                                                regexText = regexText.Substring(0, regexText.IndexOf("extends")); //   "extends" 문자 제거 
+                                            if (regexText.Contains("{"))
+                                                regexText = regexText.Substring(0, regexText.IndexOf("{")); //  "{" 문자 제거 
+
+                                            string classFileName = regexText + ".class";// (ext.ToLower() == "java" ? ".class" : ".properties");
 
                                             File.Copy(Path.Combine(classSourcePath, classFileName), Path.Combine(classSavePath, classFileName), true);
 
