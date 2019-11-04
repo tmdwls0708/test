@@ -434,7 +434,7 @@ namespace ExportGitFiles
                                         MatchCollection matches = Regex.Matches(content, @"class(.+)extends|class(.+){|class(.+)implements");
                                         foreach (Match mm in matches)
                                         {
-                                            string regexText = mm.Value.ToLower(); 
+                                            string regexText = mm.Value; 
 
                                             if (regexText.Contains("class"))
                                                 regexText = regexText.Substring(5); //  "class" 문자 제거 
@@ -443,7 +443,7 @@ namespace ExportGitFiles
                                             if (regexText.Contains("extends"))
                                                 regexText = regexText.Substring(0, regexText.IndexOf("extends")); //   "extends" 문자 제거 
                                             if (regexText.Contains("{"))
-                                                regexText = regexText.Substring(0, regexText.IndexOf("{")); //  "{" 문자 제거 
+                                                regexText = regexText.Substring(0, regexText.IndexOf("{")); //  "{" 문자 제거
 
                                             string classFileName = regexText + ".class";// (ext.ToLower() == "java" ? ".class" : ".properties");
 
